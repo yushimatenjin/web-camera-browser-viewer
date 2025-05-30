@@ -12,7 +12,8 @@ const elements = {
     modalLoader: document.getElementById('modalLoader'),
     modalResult: document.getElementById('modalResult'),
     closeModalBtn: document.getElementById('closeModalBtn'),
-    cameraButtonsContainer: document.getElementById('cameraButtonsContainer')
+    cameraButtonsContainer: document.getElementById('cameraButtonsContainer'),
+    speechToggle: document.getElementById('speechToggle')
 };
 
 const appState = {
@@ -21,7 +22,8 @@ const appState = {
     currentCameraDeviceId: null,
     currentLanguage: 'ja',
     noiseAnimationId: null,
-    gl: null
+    gl: null,
+    speechEnabled: false
 };
 
 // 多言語対応のための翻訳データ
@@ -473,7 +475,43 @@ function updateAnalyzeButtonState() {
 }
 
 /**
- * Webカメラからフレームをキャプチャし、Gemini APIで分析する関数
+ * テキストを音声で読み上げる関数
+ */
+function speakText(text) {
+    if (!appState.speechEnabled || !text) return;
+    
+    // 既存の読み上げを停止
+    speechSynthesis.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    // 日本語の音声を設定
+    const voices = speechSynthesis.getVoices();
+    const japaneseVoice = voices.find(voice => 
+        voice.lang.includes('ja') || voice.name.includes('Japanese')
+    );
+    
+    if (japaneseVoice) {
+        utterance.voice = japaneseVoice;
+    }
+    
+    // 音声設定
+    utterance.lang = appState.currentLanguage === 'ja' ? 'ja-JP' : 'en-US';
+    utterance.rate = 1.0;  // 読み上げ速度
+    utterance.pitch = 1.0; // 音程
+    utterance.volume = 0.8; // 音量
+    
+    // エラーハンドリング
+    utterance.onerror = (event) => {
+        console.error('音声読み上げエラー:', event.error);
+    };
+    
+    // 読み上げ開始
+    speechSynthesis.speak(utterance);
+}
+
+/**
+ * 画像分析を実行する関数
  */
 async function captureFrameAndAnalyze() {
     if (!appState.currentStream) {
@@ -542,6 +580,8 @@ async function captureFrameAndAnalyze() {
             result.candidates[0].content.parts.length > 0) {
             const text = result.candidates[0].content.parts[0].text;
             elements.modalResult.textContent = text;
+            // 音声読み上げを実行
+            speakText(text);
         } else {
             elements.modalResult.textContent = translations[appState.currentLanguage].modalError + ' (No valid response from LLM)';
         }
@@ -568,6 +608,23 @@ elements.toggleWebcamBtn.addEventListener('click', () => {
 // Gemini APIボタンのイベントリスナー
 elements.analyzeImageBtn.addEventListener('click', captureFrameAndAnalyze);
 
+// 音声読み上げトグルのイベントリスナー
+elements.speechToggle.addEventListener('change', (event) => {
+    appState.speechEnabled = event.target.checked;
+    // 設定をローカルストレージに保存
+    localStorage.setItem('speechEnabled', appState.speechEnabled.toString());
+    
+    if (appState.speechEnabled) {
+        // Web Speech APIが利用可能かチェック
+        if (!('speechSynthesis' in window)) {
+            alert('お使いのブラウザは音声読み上げ機能をサポートしていません。');
+            event.target.checked = false;
+            appState.speechEnabled = false;
+            localStorage.setItem('speechEnabled', 'false');
+        }
+    }
+});
+
 // モーダルを閉じるボタンのイベントリスナー
 elements.closeModalBtn.addEventListener('click', () => {
     toggleModal(false);
@@ -577,6 +634,13 @@ elements.closeModalBtn.addEventListener('click', () => {
 window.addEventListener('load', async () => {
     appState.currentLanguage = 'ja';
     updateUIForLanguage(appState.currentLanguage);
+    
+    // 音声読み上げ設定を復元
+    const savedSpeechEnabled = localStorage.getItem('speechEnabled');
+    if (savedSpeechEnabled !== null) {
+        appState.speechEnabled = savedSpeechEnabled === 'true';
+        elements.speechToggle.checked = appState.speechEnabled;
+    }
     
     // 初期状態でノイズエフェクトを表示
     toggleNoise(true);

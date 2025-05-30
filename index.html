@@ -75,6 +75,30 @@
             </div>
         </section>
 
+        <!-- 音声読み上げ設定セクション -->
+        <section class="w-full max-w-md">
+            <div class="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
+                <div class="flex items-center space-x-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M9 9a3 3 0 114.5 2.6V21H9v-6.6A3.001 3.001 0 019 9z" />
+                    </svg>
+                    <div>
+                        <label for="speechToggle" class="block text-sm font-medium text-gray-700">
+                            分析結果の音声読み上げ
+                        </label>
+                        <p class="text-xs text-gray-500">
+                            分析結果を自動で読み上げます
+                        </p>
+                    </div>
+                </div>
+                <div class="relative">
+                    <input type="checkbox" id="speechToggle" class="sr-only">
+                    <div class="toggle-bg bg-gray-200 border-2 border-gray-200 h-6 w-11 rounded-full"></div>
+                    <div class="toggle-dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition"></div>
+                </div>
+            </div>
+        </section>
+
         <!-- カメラ選択セクション -->
         <section id="cameraButtonsContainer" class="camera-buttons"></section>
 
